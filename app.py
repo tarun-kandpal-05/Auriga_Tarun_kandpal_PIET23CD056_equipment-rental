@@ -154,6 +154,48 @@ def rentals():
 	return render_template("rentals.html", rentals=rows)
 
 
+@app.route("/rentals/<int:rental_id>/transfer", methods=["GET", "POST"])
+def transfer_rental(rental_id):
+	conn = get_db()
+	rental = conn.execute("""SELECT r.*, b.name borrower_name, b.student_id, u.asset_code,
+		t.name equipment_name FROM rentals r JOIN borrowers b ON b.id=r.borrower_id
+		JOIN equipment_units u ON u.id=r.equipment_unit_id JOIN equipment_types t ON t.id=u.equipment_type_id
+		WHERE r.id=?""", (rental_id,)).fetchone()
+	if not rental:
+		conn.close()
+		flash("Rental record not found.", "danger")
+		return redirect(url_for("rentals"))
+	if request.method == "POST":
+		try:
+			if rental["returned_at"] or rental["status"] != "active":
+				raise ValueError("Only active loans can be transferred.")
+			new_borrower_id = get_or_create_borrower(
+				conn,
+				request.form.get("name", ""),
+				request.form.get("student_id", ""),
+				request.form.get("contact", ""),
+			)
+			if new_borrower_id == rental["borrower_id"]:
+				raise ValueError("A loan cannot be transferred to the same borrower.")
+			if active_count(conn, new_borrower_id) >= MAX_ACTIVE_ITEMS:
+				raise ValueError(f"Transfer rejected. The new borrower already has the maximum {MAX_ACTIVE_ITEMS} active units.")
+			conn.execute("UPDATE rentals SET borrower_id=? WHERE id=? AND returned_at IS NULL", (new_borrower_id, rental_id))
+			conn.execute("UPDATE notifications SET borrower_id=? WHERE rental_id=?", (new_borrower_id, rental_id))
+			conn.commit()
+			flash(
+				f"{rental['asset_code']} transferred from {rental['borrower_name']} to {request.form['name'].strip()}. "
+				f"Original due date remains {rental['due_at'][:10]}.",
+				"success",
+			)
+			conn.close()
+			return redirect(url_for("rentals"))
+		except (ValueError, sqlite3.Error) as exc:
+			conn.rollback()
+			flash(str(exc), "danger")
+	conn.close()
+	return render_template("transfer.html", rental=rental)
+
+
 @app.post("/returns/<int:rental_id>")
 def return_rental(rental_id):
 	conn = get_db()

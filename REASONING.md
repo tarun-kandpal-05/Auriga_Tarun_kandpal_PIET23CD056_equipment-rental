@@ -6,7 +6,7 @@ The AV room needs reliable tracking of each physical item, who has it, when it i
 
 ## 2. Functional requirements
 
-The implementation provides inventory, physical-unit borrowing, returns, deposits, late fees, borrower limits, date-range availability, reservations, conflict prevention, overdue views, and in-app reminders.
+The implementation provides inventory, physical-unit borrowing, returns, deposits, late fees, borrower limits, date-range availability, reservations, conflict prevention, active-loan transfers, overdue views, and in-app reminders.
 
 ## 3. Non-functional requirements
 
@@ -52,9 +52,13 @@ The equipment type's deposit is recorded on every unit rental. Refund is never n
 
 The active count is the number of rentals for the borrower with no `returned_at`. A request is rejected if that count plus the requested quantity exceeds 3.
 
+## 13a. Loan transfer
+
+A transfer changes the existing active rental's `borrower_id` rather than creating a second rental. This preserves the same physical unit, rental ID, borrowed date, due date, deposit, and eventual return record. Since `equipment_units.status` is not modified, availability is identical before and after transfer. The new borrower must be different from the current borrower and must have fewer than 3 active rentals; the original borrower's active count decreases naturally. Existing notifications linked to the rental are reassigned to the new borrower so overdue or due-soon messages follow the current owner without creating duplicate reminders.
+
 ## 14. Notification design
 
-The reminders page derives overdue, due-soon, and upcoming-reservation lists from current database dates. Send Reminder creates an in-app notification row; the inbox displays those rows. No email provider is required.
+The reminders page derives overdue, due-soon, and upcoming-reservation lists from current database dates. Send Reminder creates an in-app notification row; the inbox displays those rows. When a loan transfers, existing linked notifications use the new borrower. No email provider is required.
 
 ## 15. Validation strategy
 

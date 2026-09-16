@@ -21,6 +21,7 @@ The AV room currently relies on a paper register, which makes it difficult to kn
 - Three active-unit borrowing limit per borrower
 - Date-based availability lookup
 - Reservations with overlap/capacity protection
+- Active loan transfer between borrowers without changing the physical loan
 - Overdue and due-soon views with in-app reminder notifications
 - Idempotent demo seed data for a useful first launch
 
@@ -68,6 +69,7 @@ SQLite is stored in `equipment.db` and is created automatically on first startup
 - Reservations overlap when `new_start < existing_end` and `new_end > existing_start`.
 - A reservation is rejected if overlapping confirmed quantities exceed the physical capacity of that equipment type.
 - Availability is calculated from physical unit status plus overlapping confirmed reservations.
+- An active loan transfer changes only the rental's borrower. The original unit, borrowed date, due date, deposit, and rental ID are preserved; the unit becomes available only when it is returned.
 
 ## Debugging
 
@@ -75,5 +77,5 @@ Run `python app.py` from the repository root and inspect the terminal for Flask 
 
 ## Main Routes
 
-`/` dashboard, `/equipment` inventory, `/borrow` checkout, `/rentals` rental register and returns, `/reservations` reservations, `/availability` date-based capacity, `/notifications` reminders, and `/notifications/inbox` sent in-app reminders.
+`/` dashboard, `/equipment` inventory, `/borrow` checkout, `/rentals` rental register and returns, `/reservations` reservations, `/availability` date-based capacity, `/notifications` reminders, and `/notifications/inbox` sent in-app reminders. Active rentals also expose a Transfer action.
 
