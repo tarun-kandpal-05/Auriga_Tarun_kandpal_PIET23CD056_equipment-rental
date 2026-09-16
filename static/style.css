@@ -1,0 +1,1 @@
+body { background: #f6f8fb; color: #243247; } h1 { font-size: 1.8rem; } .card { border: 0; box-shadow: 0 2px 12px rgba(29, 47, 73, .07); } .stat-card { border-top: 4px solid; } .table th { white-space: nowrap; font-size: .8rem; text-transform: uppercase; color: #667085; } .table td { vertical-align: middle; } .navbar { box-shadow: 0 2px 8px rgba(0,0,0,.12); }
